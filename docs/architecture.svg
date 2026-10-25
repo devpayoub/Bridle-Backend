@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 560" width="940" height="560" role="img" aria-label="Bridle AI architecture: clients call a Next.js BFF, which calls the Django API; the API screens, retrieves, generates and validates before persisting, and writes an audit trail.">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#1f2a24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <rect width="940" height="560" fill="#faf9f5"/>
+
+  <text x="40" y="52" font-family="Georgia, serif" font-size="26" fill="#1f2a24">Request path</text>
+  <text x="40" y="76" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#6b6f68">Every message runs the same six stages. Nothing is skipped and nothing is implicit.</text>
+
+  <!-- Clients -->
+  <rect x="40" y="112" width="180" height="88" rx="10" fill="#ffffff" stroke="#d9d6cb"/>
+  <text x="60" y="142" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#1f2a24">Web console</text>
+  <text x="60" y="162" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#6b6f68">Next.js · session cookie</text>
+
+  <rect x="40" y="216" width="180" height="88" rx="10" fill="#ffffff" stroke="#d9d6cb"/>
+  <text x="60" y="246" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#1f2a24">Client backend</text>
+  <text x="60" y="266" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#6b6f68">bb- API key</text>
+
+  <!-- BFF -->
+  <rect x="272" y="112" width="150" height="192" rx="10" fill="#eef1f5" stroke="#c9d4de"/>
+  <text x="292" y="146" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#1f2a24">BFF</text>
+  <text x="292" y="166" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#6b6f68">Next route handlers</text>
+  <text x="292" y="184" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#6b6f68">cookie → bearer</text>
+  <text x="292" y="202" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#6b6f68">path allowlist</text>
+
+  <!-- API -->
+  <rect x="474" y="96" width="424" height="224" rx="12" fill="#ffffff" stroke="#d9d6cb"/>
+  <text x="494" y="126" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#1f2a24">Django API</text>
+  <text x="494" y="145" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#6b6f68">DRF · JWT + API key auth · tenant scoping</text>
+
+  <rect x="494" y="160" width="92" height="58" rx="8" fill="#f4f0e4" stroke="#ddd7c4"/>
+  <text x="504" y="184" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#1f2a24">1 Screen</text>
+  <text x="504" y="202" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#6b6f68">policy rules</text>
+
+  <rect x="596" y="160" width="92" height="58" rx="8" fill="#f4f0e4" stroke="#ddd7c4"/>
+  <text x="606" y="184" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#1f2a24">2 Retrieve</text>
+  <text x="606" y="202" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#6b6f68">pgvector</text>
+
+  <rect x="698" y="160" width="92" height="58" rx="8" fill="#f4f0e4" stroke="#ddd7c4"/>
+  <text x="708" y="184" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#1f2a24">3 Generate</text>
+  <text x="708" y="202" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#6b6f68">AI gateway</text>
+
+  <rect x="800" y="160" width="78" height="58" rx="8" fill="#f4f0e4" stroke="#ddd7c4"/>
+  <text x="810" y="184" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#1f2a24">4 Validate</text>
+  <text x="810" y="202" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#6b6f68">constraints</text>
+
+  <rect x="494" y="236" width="140" height="58" rx="8" fill="#eef1f5" stroke="#c9d4de"/>
+  <text x="504" y="260" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#1f2a24">5 Persist</text>
+  <text x="504" y="278" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#6b6f68">message + citations</text>
+
+  <rect x="646" y="236" width="140" height="58" rx="8" fill="#eef1f5" stroke="#c9d4de"/>
+  <text x="656" y="260" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#1f2a24">6 Audit</text>
+  <text x="656" y="278" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#6b6f68">decision + reason code</text>
+
+  <rect x="800" y="236" width="78" height="58" rx="8" fill="#e7eef2" stroke="#c9d4de"/>
+  <text x="810" y="260" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#1f2a24">Quota</text>
+  <text x="810" y="278" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#6b6f68">reserve first</text>
+
+  <!-- Provider -->
+  <rect x="698" y="380" width="200" height="76" rx="10" fill="#1f2a24"/>
+  <text x="718" y="410" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#faf9f5">AI provider</text>
+  <text x="718" y="430" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#b9bcb4">OpenAI-compatible gateway</text>
+  <text x="718" y="446" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#b9bcb4">key stays server-side</text>
+
+  <!-- Data -->
+  <rect x="474" y="380" width="200" height="76" rx="10" fill="#ffffff" stroke="#d9d6cb"/>
+  <text x="494" y="410" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#1f2a24">PostgreSQL 16</text>
+  <text x="494" y="430" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#6b6f68">pgvector · tenants · audit</text>
+
+  <rect x="250" y="380" width="200" height="76" rx="10" fill="#ffffff" stroke="#d9d6cb"/>
+  <text x="270" y="410" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#1f2a24">Redis + Celery</text>
+  <text x="270" y="430" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#6b6f68">cache · quotas · ingestion</text>
+
+  <!-- Edges -->
+  <path d="M220 156 H268" stroke="#1f2a24" stroke-width="1.4" fill="none" marker-end="url(#a)"/>
+  <path d="M220 260 H248 V196 H268" stroke="#1f2a24" stroke-width="1.4" fill="none" marker-end="url(#a)"/>
+  <path d="M422 208 H470" stroke="#1f2a24" stroke-width="1.4" fill="none" marker-end="url(#a)"/>
+  <path d="M744 320 V376" stroke="#1f2a24" stroke-width="1.4" fill="none" marker-end="url(#a)"/>
+  <path d="M674 320 V340 H574 V376" stroke="#1f2a24" stroke-width="1.4" fill="none" marker-end="url(#a)"/>
+  <path d="M494 320 V340 H380 V376" stroke="#1f2a24" stroke-width="1.4" fill="none" marker-end="url(#a)"/>
+
+  <text x="40" y="512" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#6b6f68">A refusal never reaches stage 3. That is the product.</text>
+</svg>

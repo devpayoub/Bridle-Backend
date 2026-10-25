@@ -1,0 +1,148 @@
+# Production-oriented stack.
+#
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Differences from the development stack:
+#   * gunicorn instead of runserver, no source bind mount
+#   * PostgreSQL and Redis are not published to the host
+#   * DEBUG=False, secure cookies, HSTS, SSL redirect (terminate TLS at a proxy)
+#   * API documentation is disabled unless EXPOSE_API_DOCS=True
+#
+# Provide secrets through the environment (or an external secret manager) — never
+# commit them. At minimum set DJANGO_SECRET_KEY, DJANGO_ALLOWED_HOSTS,
+# CORS_ALLOWED_ORIGINS and OPENAI_API_KEY.
+name: assistant-platform-prod
+
+x-app-common: &app-common
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: assistant-platform:prod
+  restart: unless-stopped
+  environment: &app-environment
+    DJANGO_SETTINGS_MODULE: config.settings.production
+    DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY must be set}
+    DJANGO_DEBUG: "False"
+    DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:?DJANGO_ALLOWED_HOSTS must be set}
+    DJANGO_TIME_ZONE: ${DJANGO_TIME_ZONE:-UTC}
+    DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:-assistant_platform}
+    REDIS_URL: redis://redis:6379/0
+    CELERY_BROKER_URL: redis://redis:6379/1
+    CELERY_RESULT_BACKEND: redis://redis:6379/2
+    CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?CORS_ALLOWED_ORIGINS must be set}
+    CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-}
+    FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-https://app.example.com}
+    SECURE_SSL_REDIRECT: ${SECURE_SSL_REDIRECT:-True}
+    AI_DEFAULT_PROVIDER: ${AI_DEFAULT_PROVIDER:-openai}
+    AI_DEFAULT_MODEL_NAME: ${AI_DEFAULT_MODEL_NAME:-gpt-4o-mini}
+    OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-openai}
+    VECTOR_SEARCH_ENABLED: ${VECTOR_SEARCH_ENABLED:-True}
+    POLICY_MODEL_EVALUATOR_ENABLED: ${POLICY_MODEL_EVALUATOR_ENABLED:-False}
+    EXPOSE_API_DOCS: ${EXPOSE_API_DOCS:-False}
+    LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    LOG_FORMAT: json
+    COLLECT_STATIC: "1"
+  volumes:
+    - media_data:/app/media
+    - static_data:/app/staticfiles
+  depends_on:
+    db:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      POSTGRES_DB: ${POSTGRES_DB:-assistant_platform}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-assistant_platform}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+
+  migrate:
+    <<: *app-common
+    restart: "no"
+    environment:
+      <<: *app-environment
+      RUN_MIGRATIONS: "1"
+      COLLECT_STATIC: "1"
+    command: ["python", "manage.py", "migrate", "--noinput"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    <<: *app-common
+    command:
+      - gunicorn
+      - config.wsgi:application
+      - --bind
+      - 0.0.0.0:8000
+      - --workers
+      - "3"
+      - --timeout
+      - "90"
+      - --graceful-timeout
+      - "30"
+      - --access-logfile
+      - "-"
+      - --error-logfile
+      - "-"
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    <<: *app-common
+    command: ["celery", "-A", "config", "worker", "--loglevel=info", "--concurrency=4", "--max-tasks-per-child=200"]
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  beat:
+    <<: *app-common
+    command: ["celery", "-A", "config", "beat", "--loglevel=info"]
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:
+  redisdata:
+  media_data:
+  static_data:

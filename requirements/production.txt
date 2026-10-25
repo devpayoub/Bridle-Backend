@@ -1,0 +1,4 @@
+-r base.txt
+
+# WSGI server for container deployments
+gunicorn==23.0.0

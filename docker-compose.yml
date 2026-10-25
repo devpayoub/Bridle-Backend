@@ -1,0 +1,131 @@
+# Local development stack: API (runserver), Celery worker + beat, PostgreSQL
+# with pgvector, Redis. Hot reload is enabled through a bind mount.
+#
+#   docker compose up --build
+#
+# The API is then available at http://localhost:8000/api/v1/ and the interactive
+# docs at http://localhost:8000/api/docs/.
+name: assistant-platform
+
+x-app-common: &app-common
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: assistant-platform:dev
+  environment: &app-environment
+    DJANGO_SETTINGS_MODULE: config.settings.development
+    DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-dev-only-secret-key-change-me}
+    DJANGO_DEBUG: "True"
+    DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,0.0.0.0,api
+    DATABASE_URL: postgres://postgres:postgres@db:5432/assistant_platform
+    REDIS_URL: redis://redis:6379/0
+    CELERY_BROKER_URL: redis://redis:6379/1
+    CELERY_RESULT_BACKEND: redis://redis:6379/2
+    CORS_ALLOWED_ORIGINS: http://localhost:3000,http://localhost:5173
+    CSRF_TRUSTED_ORIGINS: http://localhost:3000,http://localhost:5173
+    FRONTEND_BASE_URL: http://localhost:3000
+    AI_DEFAULT_PROVIDER: ${AI_DEFAULT_PROVIDER:-mock}
+    AI_DEFAULT_MODEL_NAME: ${AI_DEFAULT_MODEL_NAME:-mock-model-1}
+    AI_PROVIDER_LABEL: ${AI_PROVIDER_LABEL:-}
+    # Provider credentials. OPENAI_BASE_URL lets you point at an OpenAI-compatible
+    # gateway (OpenRouter, Azure, vLLM, LiteLLM) instead of api.openai.com.
+    OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
+    OPENAI_ORGANIZATION: ${OPENAI_ORGANIZATION:-}
+    ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL:-}
+    AI_REQUEST_TIMEOUT: ${AI_REQUEST_TIMEOUT:-30}
+    AI_MAX_RETRIES: ${AI_MAX_RETRIES:-2}
+    # Encrypts keys that clients save from the console.
+    AI_CREDENTIALS_KEY: ${AI_CREDENTIALS_KEY:-}
+    EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-mock}
+    VECTOR_SEARCH_ENABLED: ${VECTOR_SEARCH_ENABLED:-False}
+    POLICY_MODEL_EVALUATOR_ENABLED: ${POLICY_MODEL_EVALUATOR_ENABLED:-False}
+    LOG_LEVEL: INFO
+    LOG_FORMAT: plain
+    EXPOSE_API_DOCS: "True"
+    RUN_MIGRATIONS: "0"
+  volumes:
+    - .:/app
+    - media_data:/app/media
+  depends_on:
+    db:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: assistant_platform
+    ports:
+      - "55432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d assistant_platform"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "56379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # Single controlled migration step; application replicas never migrate.
+  migrate:
+    <<: *app-common
+    command: ["python", "manage.py", "migrate", "--noinput"]
+    restart: "no"
+
+  api:
+    <<: *app-common
+    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    <<: *app-common
+    command: ["celery", "-A", "config", "worker", "--loglevel=info", "--concurrency=2"]
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  beat:
+    <<: *app-common
+    command: ["celery", "-A", "config", "beat", "--loglevel=info"]
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:
+  redisdata:
+  media_data:
