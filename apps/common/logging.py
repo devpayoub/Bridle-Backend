@@ -47,6 +47,8 @@ _REDACTION_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
     # Telegram embeds the bot token in the request path: /bot<id>:<secret>/method
     (re.compile(r"/bot\d{5,15}:[A-Za-z0-9_-]{20,}"), "/bot[REDACTED]"),
     (re.compile(r"\b\d{5,15}:[A-Za-z0-9_-]{30,50}\b"), "[REDACTED_TELEGRAM_TOKEN]"),
+    # The webhook path carries a per-channel key; the URL is a credential.
+    (re.compile(r"(/webhooks/[a-z]+/[0-9a-f-]{36}/)[A-Za-z0-9_-]{10,}"), r"\1[REDACTED]"),
     (re.compile(r"(?i)\b(bearer)\s+([A-Za-z0-9._\-]{10,})"), r"\1 [REDACTED]"),
     (
         re.compile(r"(?i)((?:api[_-]?key|secret|password|token|authorization)\"?\s*[:=]\s*\"?)([^\s\",}]{4,})"),

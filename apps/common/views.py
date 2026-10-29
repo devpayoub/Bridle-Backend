@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import logging
 
-from django.conf import settings
 from django.core.cache import cache
 from django.db import connection
 from drf_spectacular.utils import extend_schema
@@ -60,9 +59,10 @@ class ReadyView(APIView):
 
         healthy = checks["database"] == "ok"
         status_code = 200 if healthy else 503
+        # No feature flags here: this endpoint is unauthenticated and reachable from
+        # the internet, so it reports reachability only.
         payload = {
             "status": "ready" if healthy else "unavailable",
             "checks": checks,
-            "vector_search": "enabled" if settings.VECTOR_SEARCH_ENABLED else "disabled",
         }
         return Response(payload, status=status_code)

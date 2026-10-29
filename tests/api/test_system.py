@@ -22,7 +22,8 @@ class TestOperationalEndpoints:
         assert response.data["status"] == "ready"
         assert response.data["checks"]["database"] == "ok"
         assert response.data["checks"]["cache"] == "ok"
-        assert "vector_search" in response.data
+        # Reachability only: an unauthenticated probe must not advertise features.
+        assert "vector_search" not in response.data
 
     def test_health_does_not_leak_internals(self, api_client):
         body = str(api_client.get(READY_URL).data)
