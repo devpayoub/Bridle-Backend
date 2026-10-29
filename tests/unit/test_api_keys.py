@@ -25,10 +25,11 @@ def created_key(organization, user):
 
 def test_key_format_and_prefix(created_key):
     record, plaintext = created_key
-    assert plaintext.startswith("sk_live_")
-    assert "." in plaintext
+    # Current format: "bb-" + 47 URL-safe characters, no separator segment.
+    assert plaintext.startswith("bb-")
+    assert len(plaintext) == 50
     assert plaintext.startswith(record.prefix)
-    assert record.prefix.count("_") == 2
+    assert record.prefix.startswith("bb-")
 
 
 def test_plaintext_is_not_stored(created_key):
@@ -54,7 +55,7 @@ def test_authenticate_wrong_secret(created_key):
 
 def test_authenticate_unknown_prefix(db):
     with pytest.raises(AuthenticationFailed):
-        authenticate_api_key("sk_live_doesnotexist.abc")
+        authenticate_api_key("bb-doesnotexist")
 
 
 def test_authenticate_malformed_key():

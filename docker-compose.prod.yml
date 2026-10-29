@@ -42,6 +42,9 @@ x-app-common: &app-common
     EXPOSE_API_DOCS: ${EXPOSE_API_DOCS:-False}
     LOG_LEVEL: ${LOG_LEVEL:-INFO}
     LOG_FORMAT: json
+    # Messaging channels (Telegram). Off until explicitly enabled.
+    CHANNELS_ENABLED: ${CHANNELS_ENABLED:-false}
+    CHANNELS_PUBLIC_BASE_URL: ${CHANNELS_PUBLIC_BASE_URL:-}
     COLLECT_STATIC: "1"
   volumes:
     - media_data:/app/media

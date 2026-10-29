@@ -40,6 +40,8 @@ CAP_CHAT_WRITE = "chat:write"
 CAP_USAGE_READ = "usage:read"
 CAP_AUDIT_READ = "audit:read"
 CAP_BILLING_READ = "billing:read"
+CAP_CHANNEL_READ = "channel:read"
+CAP_CHANNEL_WRITE = "channel:write"
 
 ALL_CAPABILITIES = frozenset(
     {
@@ -63,6 +65,8 @@ ALL_CAPABILITIES = frozenset(
         CAP_USAGE_READ,
         CAP_AUDIT_READ,
         CAP_BILLING_READ,
+        CAP_CHANNEL_READ,
+        CAP_CHANNEL_WRITE,
     }
 )
 
@@ -74,6 +78,7 @@ _READ_ONLY_CAPS = frozenset(
         CAP_KNOWLEDGE_READ,
         CAP_CONVERSATION_READ,
         CAP_APIKEY_READ,
+        CAP_CHANNEL_READ,
     }
 )
 

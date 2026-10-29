@@ -28,6 +28,7 @@ _ALLOWED_METADATA_KEYS = {
     "provider",
     "model",
     "key_last4",
+    "channel_id",
 }
 
 

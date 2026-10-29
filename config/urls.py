@@ -29,12 +29,16 @@ api_v1_patterns = [
     path("", include("apps.usage.urls")),
     path("", include("apps.audit.urls")),
     path("", include("apps.platform_admin.urls")),
+    path("", include("apps.channels.urls")),
     path("health/", HealthView.as_view(), name="health"),
     path("ready/", ReadyView.as_view(), name="ready"),
 ]
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    # Public provider callbacks. Deliberately outside /api/: the request-path
+    # logger records /api/ paths, and the webhook path key must not be logged.
+    path("webhooks/", include("apps.channels.webhook_urls")),
     path("api/v1/", include((api_v1_patterns, "v1"))),
 ]
 

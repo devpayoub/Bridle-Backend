@@ -79,7 +79,7 @@ class TestApiKeyCredentialSecurity:
         )
         assert created.status_code == 201
         plaintext = created.data["key"]
-        assert plaintext.startswith("sk_live_")
+        assert plaintext.startswith("bb-")
 
         listing = auth_client.get("/api/v1/api-keys/")
         body = str(listing.data)
@@ -111,7 +111,7 @@ class TestApiKeyCredentialSecurity:
 
     def test_invalid_key_is_rejected(self, db):
         client = APIClient()
-        client.credentials(HTTP_AUTHORIZATION="Bearer sk_live_unknown.abc")
+        client.credentials(HTTP_AUTHORIZATION="Bearer bb-unknown")
         assert client.get("/api/v1/usage/summary/").status_code == 401
 
     def test_provider_credentials_are_not_exposed(self, auth_client, assistant, settings):

@@ -16,7 +16,8 @@ x-app-common: &app-common
     DJANGO_SETTINGS_MODULE: config.settings.development
     DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-dev-only-secret-key-change-me}
     DJANGO_DEBUG: "True"
-    DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,0.0.0.0,api
+    # .ngrok-free.app lets a dev tunnel deliver webhooks without editing this file.
+    DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,0.0.0.0,api,.ngrok-free.app,.ngrok-free.dev}
     DATABASE_URL: postgres://postgres:postgres@db:5432/assistant_platform
     REDIS_URL: redis://redis:6379/0
     CELERY_BROKER_URL: redis://redis:6379/1
@@ -38,6 +39,9 @@ x-app-common: &app-common
     AI_MAX_RETRIES: ${AI_MAX_RETRIES:-2}
     # Encrypts keys that clients save from the console.
     AI_CREDENTIALS_KEY: ${AI_CREDENTIALS_KEY:-}
+    # Messaging channels (Telegram). Off until explicitly enabled.
+    CHANNELS_ENABLED: ${CHANNELS_ENABLED:-false}
+    CHANNELS_PUBLIC_BASE_URL: ${CHANNELS_PUBLIC_BASE_URL:-}
     EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-mock}
     VECTOR_SEARCH_ENABLED: ${VECTOR_SEARCH_ENABLED:-False}
     POLICY_MODEL_EVALUATOR_ENABLED: ${POLICY_MODEL_EVALUATOR_ENABLED:-False}
@@ -92,6 +96,8 @@ services:
 
   api:
     <<: *app-common
+    # Fixed name so this stack is easy to spot next to other projects on the host.
+    container_name: BridleAI
     command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
     ports:
       - "8000:8000"

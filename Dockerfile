@@ -15,6 +15,11 @@ RUN apt-get update \
 COPY requirements/ ./requirements/
 RUN pip install --no-cache-dir -r requirements/production.txt
 
+# Fail at build time, not at the first request. An image missing a declared
+# dependency used to surface as an ImportError inside manage.py, which reads
+# like a code bug and is not.
+RUN python -c "import django, rest_framework, rest_framework_simplejwt, celery, redis, psycopg, pgvector, cryptography, httpx, openai, pypdf, docx, bs4; print('runtime dependencies ok')"
+
 COPY . .
 
 # The entrypoint must be executable even when the build context comes from a

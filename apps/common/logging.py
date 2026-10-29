@@ -44,6 +44,9 @@ class RequestContextFilter(logging.Filter):
 
 _REDACTION_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"sk-[A-Za-z0-9_\-]{12,}"), "sk_[REDACTED]"),
+    # Telegram embeds the bot token in the request path: /bot<id>:<secret>/method
+    (re.compile(r"/bot\d{5,15}:[A-Za-z0-9_-]{20,}"), "/bot[REDACTED]"),
+    (re.compile(r"\b\d{5,15}:[A-Za-z0-9_-]{30,50}\b"), "[REDACTED_TELEGRAM_TOKEN]"),
     (re.compile(r"(?i)\b(bearer)\s+([A-Za-z0-9._\-]{10,})"), r"\1 [REDACTED]"),
     (
         re.compile(r"(?i)((?:api[_-]?key|secret|password|token|authorization)\"?\s*[:=]\s*\"?)([^\s\",}]{4,})"),

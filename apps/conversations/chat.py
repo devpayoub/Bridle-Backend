@@ -228,8 +228,10 @@ def handle_chat_request(
             extra={"max_chars": settings.CHAT_MAX_MESSAGE_CHARS, "length": len(text)},
         )
 
-    # Rate limiting happens before any expensive work.
-    enforce_rate_limit("chat", f"org:{organization.id}")
+    # Rate limiting happens before any expensive work. Channels pass their own
+    # scope so a public bot cannot starve the console's bucket; everything else
+    # keeps the "chat" scope exactly as before.
+    enforce_rate_limit(getattr(tenant, "rate_limit_scope", None) or "chat", f"org:{organization.id}")
     if api_key is not None:
         enforce_rate_limit("chat", f"key:{api_key.id}")
 

@@ -40,6 +40,10 @@ class AuditLog(UUIDModel):
         AI_SETTINGS_CLEARED = "ai_settings.cleared", "AI provider settings cleared"
         PLATFORM_ORGANIZATION_STATUS = "platform.organization_status", "Workspace status changed by platform admin"
         PLATFORM_USER_UPDATED = "platform.user_updated", "Account changed by platform admin"
+        CHANNEL_CONNECTED = "channel.connected", "Channel connected"
+        CHANNEL_DISCONNECTED = "channel.disconnected", "Channel disconnected"
+        CHANNEL_UPDATED = "channel.updated", "Channel updated"
+        CHANNEL_ERROR = "channel.error", "Channel error"
 
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, null=True, blank=True, related_name="audit_logs"

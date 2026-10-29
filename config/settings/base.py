@@ -48,6 +48,13 @@ env = environ.Env(
     EXPOSE_API_DOCS=(bool, False),
     AI_CREDENTIALS_KEY=(str, ""),
     AI_PROVIDER_LABEL=(str, ""),
+    CHANNELS_ENABLED=(bool, False),
+    CHANNELS_PUBLIC_BASE_URL=(str, ""),
+    CHANNELS_TELEGRAM_MAX_PARTS=(int, 3),
+    CHANNELS_TELEGRAM_ALLOW_FORWARDS=(bool, False),
+    CHANNELS_MAX_UPDATE_AGE_SECONDS=(int, 3600),
+    CHANNELS_EVENT_RETENTION_DAYS=(int, 30),
+    CHANNELS_IDENTITY_RETENTION_DAYS=(int, 180),
 )
 
 # Read .env if present (never required in production; real deployments inject env vars).
@@ -95,6 +102,7 @@ LOCAL_APPS = [
     "apps.ai_gateway",
     "apps.conversations",
     "apps.usage",
+    "apps.channels",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -287,6 +295,18 @@ CELERY_BEAT_SCHEDULE = {
         "task": "usage.roll_up_summaries",
         "schedule": crontab(minute=15),
     },
+    "purge-channel-events": {
+        "task": "channels.purge_events",
+        "schedule": crontab(hour=4, minute=0),
+    },
+    "purge-channel-identities": {
+        "task": "channels.purge_identities",
+        "schedule": crontab(hour=4, minute=15),
+    },
+    "requeue-stale-channel-events": {
+        "task": "channels.requeue_stale_events",
+        "schedule": crontab(minute="*/5"),
+    },
 }
 
 # ---------------------------------------------------------------------------
@@ -317,6 +337,25 @@ EMBEDDING_PROVIDER = env("EMBEDDING_PROVIDER")
 EMBEDDING_MODEL = env("EMBEDDING_MODEL")
 EMBEDDING_DIMENSIONS = env("EMBEDDING_DIMENSIONS")
 VECTOR_SEARCH_ENABLED = env("VECTOR_SEARCH_ENABLED")
+
+# ---------------------------------------------------------------------------
+# Messaging channels (Telegram first)
+# ---------------------------------------------------------------------------
+# Off by default: the webhook, the management API and the tasks all no-op until
+# an operator enables it, so the app can ship ahead of the first connected bot.
+CHANNELS_ENABLED = env("CHANNELS_ENABLED")
+# Public HTTPS origin Telegram can reach, e.g. https://api.example.com
+CHANNELS_PUBLIC_BASE_URL = env("CHANNELS_PUBLIC_BASE_URL", default="").rstrip("/")
+CHANNELS_TELEGRAM_API_BASE = "https://api.telegram.org"
+CHANNELS_TELEGRAM_TIMEOUT = env.float("CHANNELS_TELEGRAM_TIMEOUT", default=10.0)
+CHANNELS_TELEGRAM_MAX_MESSAGE_CHARS = 4096
+CHANNELS_TELEGRAM_MAX_PARTS = env("CHANNELS_TELEGRAM_MAX_PARTS")
+CHANNELS_TELEGRAM_REPLY_TO_MESSAGE = env.bool("CHANNELS_TELEGRAM_REPLY_TO_MESSAGE", default=False)
+CHANNELS_TELEGRAM_ALLOW_FORWARDS = env("CHANNELS_TELEGRAM_ALLOW_FORWARDS")
+CHANNELS_MAX_UPDATE_AGE_SECONDS = env("CHANNELS_MAX_UPDATE_AGE_SECONDS")
+CHANNELS_EVENT_RETENTION_DAYS = env("CHANNELS_EVENT_RETENTION_DAYS")
+CHANNELS_IDENTITY_RETENTION_DAYS = env("CHANNELS_IDENTITY_RETENTION_DAYS")
+CHANNELS_MAX_BODY_BYTES = 256 * 1024
 
 # ---------------------------------------------------------------------------
 # Policy engine
@@ -363,6 +402,15 @@ RATE_LIMITS = {
     "chat": {"limit": env.int("RATE_LIMIT_CHAT_PER_MINUTE", default=120), "window": 60},
     "policy.evaluate": {"limit": 300, "window": 60},
     "knowledge.upload": {"limit": 60, "window": 3600},
+    # Channel traffic gets its own bucket so a public bot cannot starve the
+    # console, plus per-user and per-bot daily caps to bound abuse.
+    "chat.channel": {"limit": env.int("RATE_LIMIT_CHANNEL_CHAT_PER_MINUTE", default=300), "window": 60},
+    "channel.chat.identity": {"limit": 10, "window": 60},
+    "channel.chat.identity.daily": {"limit": 200, "window": 86400},
+    "channel.chat.channel.daily": {"limit": 5000, "window": 86400},
+    "channel.webhook": {"limit": 600, "window": 60},
+    "channel.send": {"limit": 20, "window": 60},
+    "channel.test": {"limit": 10, "window": 3600},
 }
 RATE_LIMIT_ENABLED = env.bool("RATE_LIMIT_ENABLED", default=True)
 
