@@ -1,9 +1,12 @@
 """Local development settings: verbose, permissive transport, never for production."""
 from .base import *  # noqa: F401,F403
 
-DEBUG = True
+# True for local work, but a tunnelled instance must run with DJANGO_DEBUG=False:/n# the technical error page prints local variables, which can contain credentials.
+DEBUG = env.bool("DJANGO_DEBUG", default=True)  # noqa: F405
 ALLOWED_HOSTS = ["*"]
-EXPOSE_API_DOCS = True
+# On by default for local work, but overridable: an instance reachable from the
+# internet should not publish its endpoint map.
+EXPOSE_API_DOCS = env.bool("EXPOSE_API_DOCS", default=True)  # noqa: F405
 
 # Console email is the default in development; tokens appear in the runserver log.
 EMAIL_BACKEND = env("EMAIL_BACKEND")  # noqa: F405

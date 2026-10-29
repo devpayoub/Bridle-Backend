@@ -490,6 +490,10 @@ LOGGING = {
 # ---------------------------------------------------------------------------
 # API docs exposure (development only by default)
 # ---------------------------------------------------------------------------
+# Django admin is a well-known credential-stuffing target. Mounted by default,
+# but any instance behind a public URL should set ADMIN_ENABLED=False and use the
+# console instead.
+ADMIN_ENABLED = env.bool("ADMIN_ENABLED", default=True)
 EXPOSE_API_DOCS = env("EXPOSE_API_DOCS")
 
 # Maximum number of assistants / members for the free plan is defined in

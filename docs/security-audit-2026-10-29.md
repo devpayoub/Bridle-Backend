@@ -245,3 +245,40 @@ the absence.
 - No frontend dependency audit (`npm audit`) — a separate exercise.
 - Tenant-isolation and prompt-injection behaviour are covered by the existing test suite, not
   re-audited here.
+
+---
+
+## 7. Remediation log — 2026-10-29
+
+Applied in code (this commit):
+
+| # | Change |
+| --- | --- |
+| F5 | `_REDACTION_PATTERNS` masks `/webhooks/<type>/<uuid>/<key>/` in app logs |
+| F7 | `/api/v1/ready/` returns `{status, checks}` only |
+| F6 | `AI_CREDENTIALS_KEY` now set; `_fernet()` no longer derives from `SECRET_KEY` |
+| F2 | `DEBUG` and `EXPOSE_API_DOCS` are env-driven in `development.py`; the dev compose no longer hardcodes them |
+| F4 | New `ADMIN_ENABLED` setting; `admin/` is unmounted when false |
+| — | New check `channels.W004`: warns when `DEBUG` is on while `CHANNELS_PUBLIC_BASE_URL` is set |
+
+Applied to the running environment (`.env`, not committed): `DJANGO_DEBUG=False`,
+`EXPOSE_API_DOCS=False`, `ADMIN_ENABLED=False`, `AI_CREDENTIALS_KEY=<generated>`.
+
+Verified from the public URL afterwards:
+
+```
+/admin/            404      (was 200)
+/admin/login/      404
+/api/docs/         404
+/api/schema/       404      (was 200, 132 KB, 64 endpoints)
+/api/v1/ready/     200      {status, checks} only
+/api/v1/channels/  401
+```
+
+Still requires a human:
+
+1. **Rotate the Telegram bot token** (@BotFather → /revoke). The value is in logs; no code
+   change can undo that.
+2. **Reconnect the bot** in the console. Rotating `AI_CREDENTIALS_KEY` invalidated the stored
+   ciphertext, so the channel is now `ERROR / credentials_unreadable` by design — reconnect
+   re-registers a fresh webhook and a fresh path key.

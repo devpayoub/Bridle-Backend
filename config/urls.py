@@ -35,7 +35,7 @@ api_v1_patterns = [
 ]
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    *([path("admin/", admin.site.urls)] if settings.ADMIN_ENABLED else []),
     # Public provider callbacks. Deliberately outside /api/: the request-path
     # logger records /api/ paths, and the webhook path key must not be logged.
     path("webhooks/", include("apps.channels.webhook_urls")),

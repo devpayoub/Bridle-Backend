@@ -15,7 +15,7 @@ x-app-common: &app-common
   environment: &app-environment
     DJANGO_SETTINGS_MODULE: config.settings.development
     DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-dev-only-secret-key-change-me}
-    DJANGO_DEBUG: "True"
+    DJANGO_DEBUG: ${DJANGO_DEBUG:-True}
     # .ngrok-free.app lets a dev tunnel deliver webhooks without editing this file.
     DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,0.0.0.0,api,.ngrok-free.app,.ngrok-free.dev}
     DATABASE_URL: postgres://postgres:postgres@db:5432/assistant_platform
@@ -47,7 +47,7 @@ x-app-common: &app-common
     POLICY_MODEL_EVALUATOR_ENABLED: ${POLICY_MODEL_EVALUATOR_ENABLED:-False}
     LOG_LEVEL: INFO
     LOG_FORMAT: plain
-    EXPOSE_API_DOCS: "True"
+    EXPOSE_API_DOCS: ${EXPOSE_API_DOCS:-True}
     RUN_MIGRATIONS: "0"
   volumes:
     - .:/app

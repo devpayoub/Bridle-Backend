@@ -45,3 +45,20 @@ def check_credentials_key(app_configs, **kwargs):
             )
         ]
     return []
+
+
+@register()
+def check_debug_public_exposure(app_configs, **kwargs):
+    """A tunnel plus DEBUG is the combination that leaks local variables."""
+    if not settings.DEBUG or not settings.CHANNELS_PUBLIC_BASE_URL:
+        return []
+    return [
+        Warning(
+            "This API is reachable from the internet (CHANNELS_PUBLIC_BASE_URL is set) with DEBUG on.",
+            hint=(
+                "Django's technical error page prints the traceback and local variables, "
+                "which can include credentials. Run tunnelled sessions with DJANGO_DEBUG=False."
+            ),
+            id="channels.W004",
+        )
+    ]
